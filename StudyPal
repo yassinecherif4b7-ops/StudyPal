@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StudyPal - Your AI Study Companion</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .chat-container {
+            padding: 20px;
+            height: 500px;
+            overflow-y: auto;
+            background: #f8f9fa;
+        }
+
+        .message {
+            margin: 15px 0;
+            padding: 15px;
+            border-radius: 15px;
+            max-width: 80%;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .user-message {
+            background: #007bff;
+            color: white;
+            margin-left: auto;
+            border-bottom-right-radius: 5px;
+        }
+
+        .bot-message {
+            background: white;
+            color: #333;
+            border: 1px solid #e0e0e0;
+            border-bottom-left-radius: 5px;
+        }
+
+        .input-container {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            gap: 10px;
+        }
+
+        #userInput {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        #userInput:focus {
+            border-color: #4CAF50;
+        }
+
+        #sendButton {
+            padding: 15px 25px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+
+        #sendButton:hover {
+            background: #45a049;
+        }
+
+        .typing-indicator {
+            display: none;
+            padding: 15px;
+            color: #666;
+            font-style: italic;
+        }
+
+        .subject-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 15px;
+            background: white;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .subject-btn {
+            padding: 8px 15px;
+            background: #f1f3f4;
+            border: 1px solid #dadce0;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .subject-btn:hover {
+            background: #e8f0fe;
+            border-color: #1a73e8;
+        }
+
+        /* Responsive design */
+        @media (max-width: 600px) {
+            .container {
+                margin: 10px;
+                border-radius: 10px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .message {
+                max-width: 90%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎓 StudyPal AI</h1>
+            <p>Your intelligent study companion - Ask me anything about any subject!</p>
+        </div>
+
+        <div class="subject-buttons">
+            <button class="subject-btn" onclick="quickQuestion('math')">📊 Mathematics</button>
+            <button class="subject-btn" onclick="quickQuestion('science')">🔬 Science</button>
+            <button class="subject-btn" onclick="quickQuestion('history')">📜 History</button>
+            <button class="subject-btn" onclick="quickQuestion('english')">📚 English</button>
+            <button class="subject-btn" onclick="quickQuestion('programming')">💻 Programming</button>
+        </div>
+
+        <div class="chat-container" id="chatContainer">
+            <div class="message bot-message">
+                👋 Hello! I'm StudyPal, your AI study companion! 
+                I can help you with mathematics, science, history, English, programming, and more! 
+                What would you like to learn about today?
+            </div>
+        </div>
+
+        <div class="typing-indicator" id="typingIndicator">
+            StudyPal is typing...
+        </div>
+
+        <div class="input-container">
+            <input type="text" id="userInput" placeholder="Ask about any subject (e.g., 'Explain photosynthesis' or 'Help with algebra')..." 
+                   onkeypress="handleKeyPress(event)">
+            <button id="sendButton" onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        const chatContainer = document.getElementById('chatContainer');
+        const userInput = document.getElementById('userInput');
+        const typingIndicator = document.getElementById('typingIndicator');
+
+        // Sample knowledge base - you can expand this!
+        const knowledgeBase = {
+            math: {
+                'algebra': 'Algebra is the branch of mathematics dealing with symbols and rules for manipulating those symbols. It helps solve equations and understand relationships between variables.',
+                'geometry': 'Geometry studies shapes, sizes, positions, and properties of space. Key concepts include points, lines, angles, surfaces, and solids.',
+                'calculus': 'Calculus is the mathematical study of continuous change. It has two main branches: differential calculus and integral calculus.'
+            },
+            science: {
+                'photosynthesis': 'Photosynthesis is the process where plants convert light energy, usually from the sun, into chemical energy. The equation is: 6CO₂ + 6H₂O → C₆H₁₂O₆ + 6O₂',
+                'gravity': 'Gravity is the force that attracts two bodies toward each other. On Earth, it gives weight to physical objects.',
+                'cells': 'Cells are the basic structural and functional units of all living organisms. They can be prokaryotic (bacteria) or eukaryotic (plants, animals).'
+            },
+            history: {
+                'world war ii': 'World War II was a global war that lasted from 1939 to 1945. It involved most of the world\'s nations and was the deadliest conflict in human history.',
+                'ancient rome': 'Ancient Rome was a civilization that began on the Italian Peninsula and grew to become one of the largest empires in the ancient world.',
+                'renaissance': 'The Renaissance was a period in European history marking the transition from the Middle Ages to modernity, characterized by a cultural and artistic revival.'
+            },
+            programming: {
+                'html': 'HTML (HyperText Markup Language) is the standard markup language for creating web pages. It describes the structure of a web page.',
+                'javascript': 'JavaScript is a programming language that enables interactive web pages. It\'s an essential part of web applications.',
+                'python': 'Python is a high-level programming language known for its readability and versatility. It\'s great for beginners and professionals alike.'
+            }
+        };
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        function sendMessage() {
+            const message = userInput.value.trim();
+            if (!message) return;
+
+            // Add user message to chat
+            addMessage(message, 'user');
+            userInput.value = '';
+
+            // Show typing indicator
+            typingIndicator.style.display = 'block';
+
+            // Simulate AI thinking
+            setTimeout(() => {
+                typingIndicator.style.display = 'none';
+                const response = generateResponse(message.toLowerCase());
+                addMessage(response, 'bot');
+            }, 1000 + Math.random() * 1000);
+        }
+
+        function quickQuestion(subject) {
+            const questions = {
+                math: "Can you explain quadratic equations?",
+                science: "What is Newton's first law of motion?",
+                history: "Tell me about the Industrial Revolution",
+                english: "Explain what metaphors and similes are",
+                programming: "What's the difference between HTML and CSS?"
+            };
+            
+            userInput.value = questions[subject];
+            sendMessage();
+        }
+
+        function generateResponse(userMessage) {
+            // Check for specific topics in the knowledge base
+            for (const subject in knowledgeBase) {
+                for (const topic in knowledgeBase[subject]) {
+                    if (userMessage.includes(topic)) {
+                        return knowledgeBase[subject][topic];
+                    }
+                }
+            }
+
+            // Default responses based on keywords
+            if (userMessage.includes('hello') || userMessage.includes('hi')) {
+                return "Hello! I'm excited to help you learn! What subject are you interested in today? 📚";
+            } else if (userMessage.includes('thank')) {
+                return "You're welcome! I'm always happy to help with your studies. What else would you like to know? 😊";
+            } else if (userMessage.includes('math') || userMessage.includes('algebra') || userMessage.includes('calculus')) {
+                return "I'd love to help with mathematics! I can explain concepts like algebra, geometry, calculus, or help with specific problems. What math topic interests you?";
+            } else if (userMessage.includes('science') || userMessage.includes('biology') || userMessage.includes('physics') || userMessage.includes('chemistry')) {
+                return "Science is fascinating! I can help with biology, chemistry, physics, or earth sciences. What specific scientific concept would you like to explore?";
+            } else if (userMessage.includes('history') || userMessage.includes('historical')) {
+                return "History helps us understand our world! I can discuss ancient civilizations, world wars, important historical figures, or specific time periods. What historical topic interests you?";
+            } else {
+                return "That's an interesting question! While I'm still learning, I can help you with mathematics, science, history, English, programming, and many other subjects. Could you be more specific about what you'd like to know?";
+            }
+        }
+
+        function addMessage(text, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}-message`;
+            messageDiv.textContent = text;
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        // Initialize with a welcome message after a short delay
+        setTimeout(() => {
+            addMessage("You can ask me questions like:\n• 'Explain photosynthesis'\n• 'What is algebra?'\n• 'Tell me about World War II'\n• 'Help with programming concepts'\n\nJust type your question or click on a subject button above!", 'bot');
+        }, 2000);
+    </script>
+</body>
+</html>
